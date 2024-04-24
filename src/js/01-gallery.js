@@ -1,55 +1,49 @@
 import { galleryItems } from "./gallery-items.js";
-// Change code below this line
+const galleryList = document.querySelector(".gallery");
+const galleryItemsMarkup = createGalleryItemsMarkup(galleryItems);
 
-console.log(galleryItems);
+galleryList.insertAdjacentHTML("beforeend", galleryItemsMarkup);
 
-function renderGallery() {
-  const galleryList = document.querySelector(".gallery");
-
-  galleryItems.forEach((galleryItems) => {
-    const listItem = document.createElement("li");
-    listItem.classList.add("gallery__item");
-
-    const link = document.createElement("a");
-    link.classList.add("gallery__link");
-    link.href = galleryItems.original;
-
-    const image = document.createElement("img");
-    image.classList.add("gallery__image");
-    image.src = galleryItems.preview;
-    image.dataset.source = galleryItems.original;
-    image.alt = galleryItems.description;
-
-    link.appendChild(image);
-    listItem.appendChild(link);
-    galleryList.appendChild(listItem);
-  });
+function createGalleryItemsMarkup(images) {
+  return images
+    .map(({ preview, original, description }) => {
+      return `
+  <li class="gallery__item">
+    <a class="gallery__link" href="${original}">
+      <img
+        class="gallery__image"
+        src="${preview}"
+        data-source="${original}"
+        alt="${description}"
+      />
+    </a>
+  </li>`;
+    })
+    .join("");
 }
 
-// Apelarea funcției pentru randarea galeriei la încărcarea paginii
-document.addEventListener("DOMContentLoaded", renderGallery);
+galleryList.addEventListener("click", selectImage);
 
-// Funcție pentru deschiderea lightbox-ului cu imaginea mare
-function openLightbox(source) {
-  const lightbox = document.getElementById("lightbox");
-  const lightboxImg = document.getElementById("lightbox-img");
+function selectImage(e) {
+  if (e.target.nodeName !== "IMG") return;
 
-  lightboxImg.src = source;
-  lightbox.style.display = "block";
-}
+  e.preventDefault();
 
-// Funcție pentru închiderea lightbox-ului
-function closeLightbox() {
-  const lightbox = document.getElementById("lightbox");
-  lightbox.style.display = "none";
-}
+  const instance = basicLightbox.create(
+    `<img src="${e.target.dataset.source}">`,
+    {
+      onShow: (instance) => {
+        document.addEventListener("keyup", escapeCloseFunction);
+      },
+      onClose: (instance) => {
+        document.removeEventListener("keyup", escapeCloseFunction);
+      },
+    }
+  );
 
-// Delegarea evenimentului de click pe galerie
-document.querySelector(".gallery").addEventListener("click", function (event) {
-  event.preventDefault(); // Previne comportamentul implicit de redirecționare a link-ului
-
-  if (event.target.tagName === "IMG") {
-    const source = event.target.dataset.source;
-    openLightbox(source);
+  function escapeCloseFunction(e) {
+    if (e.key === "Escape") instance.close();
   }
-});
+
+  instance.show();
+}
